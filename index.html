@@ -218,3 +218,822 @@
                 <div class="flex items-center gap-2">
                     <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow">
                         <i class="fa-solid fa-file-excel"></i> 導出 CSV
+                    </button>
+                    <button onclick="toggleAdminView()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs">
+                        返回冒險主頁
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Fast-Forward Controls -->
+            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-xs space-y-2">
+                <p class="font-bold text-amber-900 flex items-center gap-1">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i> 測試展示工具（模擬快進）
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="adminUnlockNextWeek()" class="px-3 py-1 rounded-lg bg-amber-500 text-white font-bold hover:bg-amber-600">
+                        ⚡ 直接解鎖下一週
+                    </button>
+                    <button onclick="adminUnlockAllWeeks()" class="px-3 py-1 rounded-lg bg-purple-600 text-white font-bold hover:bg-purple-700">
+                        🚀 全解鎖 (含體驗課與21週)
+                    </button>
+                    <button onclick="adminResetData()" class="px-3 py-1 rounded-lg bg-rose-500 text-white font-bold hover:bg-rose-600">
+                        🗑️ 重置測試資料
+                    </button>
+                </div>
+            </div>
+
+            <!-- Branch Settings Manager -->
+            <div class="space-y-3">
+                <h3 class="font-game font-bold text-sm text-slate-800">🏫 12 分校驗證碼與體驗課時段設定</h3>
+                <div id="branch-config-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- Dynamic branch settings -->
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- Student Records Table -->
+            <div class="space-y-2">
+                <h3 class="font-game font-bold text-sm text-slate-800">📋 學生報名與通關名單</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" id="admin-search" oninput="renderAdminTable()" placeholder="搜尋家長姓名或電話..." class="p-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sky-400 outline-none">
+                    <select id="admin-branch-filter" onchange="renderAdminTable()" class="p-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+                        <option value="ALL">全部 12 所分校</option>
+                        <option value="東區東門校">東區東門校</option>
+                        <option value="安平區安平校">安平區安平校</option>
+                        <option value="永康區永康校">永康區永康校</option>
+                        <option value="南區南區校">南區南區校</option>
+                        <option value="北區北區校">北區北區校</option>
+                        <option value="中西區民權校">中西區民權校</option>
+                        <option value="安南區安南校">安南區安南校</option>
+                        <option value="仁德區仁德校">仁德區仁德校</option>
+                        <option value="歸仁區歸仁校">歸仁區歸仁校</option>
+                        <option value="新營區新營校">新營區新營校</option>
+                        <option value="善化區善化校">善化區善化校</option>
+                        <option value="新市區新市校">新市區新市校</option>
+                    </select>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-800 font-bold border-b">
+                            <tr>
+                                <th class="p-3">學生 / 家長</th>
+                                <th class="p-3">電話</th>
+                                <th class="p-3">國小 / 分校</th>
+                                <th class="p-3">體驗課狀態</th>
+                                <th class="p-3">週次進度</th>
+                                <th class="p-3">最近獲得禮物</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: ADMIN LOGIN -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative animate-pop">
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="font-game text-lg font-black text-slate-900">分校管理員登入</h3>
+                <p class="text-xs text-slate-500">請輸入後台管理帳號與密碼</p>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">管理帳號</label>
+                    <input type="text" id="admin-user-input" required placeholder="admin" class="w-full p-2.5 rounded-xl border border-slate-200 font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">管理密碼</label>
+                    <input type="password" id="admin-pass-input" required placeholder="2027" class="w-full p-2.5 rounded-xl border border-slate-200 font-bold">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-2xl bg-sky-600 text-white font-black text-sm shadow hover:bg-sky-700 transition">
+                    登入後台管理
+                </button>
+                <button type="button" onclick="closeAdminLoginModal()" class="w-full py-2 text-slate-400 font-bold hover:text-slate-600">
+                    取消
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: WEEK 0 EXPERIENCE CLASS -->
+    <div id="week0-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative animate-pop max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black text-xs">第 0 週</span>
+                    <h4 class="font-bold text-slate-800 text-sm sm:text-base">實體免費美語體驗課預約與驗證</h4>
+                </div>
+                <button onclick="closeWeek0Modal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="week0-content-area" class="space-y-4 text-xs">
+                <!-- Dynamic loaded content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: 5-QUESTION QUIZ -->
+    <div id="mission-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative animate-pop">
+            <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span id="modal-week-tag" class="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800 font-black text-xs">第 1 週</span>
+                    <h4 id="modal-week-title" class="font-bold text-slate-800 text-sm sm:text-base">任務標題</h4>
+                </div>
+                <button onclick="closeMissionModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="modal-game-area" class="space-y-4">
+                <!-- Quizzes injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SCRATCH CARD -->
+    <div id="reward-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl text-center space-y-4 relative animate-pop">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-gift"></i>
+            </div>
+            <h3 class="font-game text-xl font-black text-slate-900">LUCKY SCRATCH 刮刮樂</h3>
+            <p class="text-xs text-slate-500">動動手指刮開下方區域或點擊快速開獎！</p>
+
+            <div class="relative w-64 h-32 mx-auto rounded-2xl overflow-hidden shadow-inner border-4 border-amber-300 bg-gradient-to-tr from-amber-100 to-orange-100 flex flex-col items-center justify-center p-3">
+                <div id="scratch-prize-revealed" class="text-center space-y-1">
+                    <span class="text-xs font-bold text-amber-800 bg-amber-200 px-2 py-0.5 rounded-full">★ 刮開結果 ★</span>
+                    <p id="scratch-prize-name" class="font-black text-slate-900 text-sm">迪士尼高級文具組</p>
+                    <p class="text-[10px] text-emerald-700 font-bold">+ 1張免費美語體驗課兌換券</p>
+                </div>
+                <canvas id="scratch-canvas" class="scratch-canvas absolute inset-0 w-full h-full"></canvas>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="autoScratch()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
+                    ✨ 快速開獎
+                </button>
+                <button id="claim-reward-btn" onclick="openWinnerModal()" disabled class="flex-2 py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs transition">
+                    請先刮開刮刮卡
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: WINNER CLAIM -->
+    <div id="winner-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative animate-pop">
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-square-check"></i>
+                </div>
+                <h3 class="font-game text-xl font-black text-slate-900">確認禮物兌換與分校登記</h3>
+                <p class="text-xs text-slate-500">請確認資料以利台南分校準備禮品</p>
+            </div>
+
+            <form onsubmit="confirmWinnerClaim(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">獲獎學生姓名</label>
+                    <input type="text" id="win-child-name" readonly class="w-full p-2.5 rounded-xl bg-slate-100 border border-slate-200 font-bold text-slate-700">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">家長聯絡電話</label>
+                    <input type="tel" id="win-parent-phone" required class="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-slate-700">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">預約領獎分校</label>
+                    <select id="win-branch-select" required class="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-slate-800">
+                        <option value="東區東門校">東區 - 東門校</option>
+                        <option value="安平區安平校">安平區 - 安平校</option>
+                        <option value="永康區永康校">永康區 - 永康校</option>
+                        <option value="南區南區校">南區 - 南區校</option>
+                        <option value="北區北區校">北區 - 北區校</option>
+                        <option value="中西區民權校">中西區 - 民權校</option>
+                        <option value="安南區安南校">安南區 - 安南校</option>
+                        <option value="仁德區仁德校">仁德區 - 仁德校</option>
+                        <option value="歸仁區歸仁校">歸仁區 - 歸仁校</option>
+                        <option value="新營區新營校">新營區 - 新營校</option>
+                        <option value="善化區善化校">善化區 - 善化校</option>
+                        <option value="新市區新市校">新市區 - 新市校</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-sm shadow-md hover:brightness-105 transition">
+                    確認登記並領取本週獎勵
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Data & Logic Engine -->
+    <script>
+        const BRANCHES_DATA = {
+            "東區東門校": { code: "8801", address: "台南市東區東門路二段100號", phone: "06-2350001", time: "每週三下午 15:30 / 每週六上午 10:00" },
+            "安平區安平校": { code: "8802", address: "台南市安平區中華西路二段200號", phone: "06-2980002", time: "每週四下午 16:00 / 每週六下午 14:00" },
+            "永康區永康校": { code: "8803", address: "台南市永康區中華路300號", phone: "06-3120003", time: "每週二下午 15:30 / 每週日上午 10:00" },
+            "南區南區校": { code: "8804", address: "台南市南區金華路一段400號", phone: "06-2610004", time: "每週五下午 16:00 / 每週六上午 11:00" },
+            "北區北區校": { code: "8805", address: "台南市北區西門路四段500號", phone: "06-2510005", time: "每週三下午 16:30 / 每週日上午 10:30" },
+            "中西區民權校": { code: "8806", address: "台南市中西區民權路二段600號", phone: "06-2220006", time: "每週四下午 15:00 / 每週六下午 15:30" },
+            "安南區安南校": { code: "8807", address: "台南市安南區安中路一段700號", phone: "06-2560007", time: "每週二下午 16:00 / 每週日上午 11:00" },
+            "仁德區仁德校": { code: "8808", address: "台南市仁德區中正路二段800號", phone: "06-2790008", time: "每週五下午 15:30 / 每週六下午 14:00" },
+            "歸仁區歸仁校": { code: "8809", address: "台南市歸仁區中正北路900號", phone: "06-3300009", time: "每週三下午 15:00 / 每週日上午 09:30" },
+            "新營區新營校": { code: "8810", address: "台南市新營區民治路1000號", phone: "06-6320010", time: "每週四下午 16:00 / 每週六上午 10:00" },
+            "善化區善化校": { code: "8811", address: "台南市善化區中山路1100號", phone: "06-5810011", time: "每週二下午 15:30 / 每週日下午 14:00" },
+            "新市區新市校": { code: "8812", address: "台南市新市區中正路1200號", phone: "06-5890012", time: "每週五下午 16:00 / 每週六上午 11:30" }
+        };
+
+        const WEEKS_DATA = Array.from({length: 21}, (_, i) => {
+            const w = i + 1;
+            const themes = ["生活自理", "ㄅㄆㄇ注音", "數學加減", "ABC英文", "錢幣認識", "國字認字", "作息適應", "幾何邏輯", "交通安全", "色彩英文", "注音聲調", "時鐘認讀", "桌面收納", "數字大小", "社交美語", "相反詞", "錢幣找零", "健康飲食", "專注尋寶", "文具英文", "小一畢業"];
+            const prizes = ["迪士尼削鉛筆機", "注音卡牌桌遊", "樂高積木小包", "英文繪本故事書", "智慧存錢筒", "硬筆字練習本", "專屬印章文具組", "幾何拼圖板", "安全反光吊飾", "無毒蠟筆盒", "護脊書包折價券", "卡通鬧鐘", "桌上型收納盒", "魔術方塊", "美語故事讀本", "相反詞卡牌", "削鉛筆機", "304不鏽鋼餐盒", "護脊檯燈抽獎券", "高級護脊書包", "全通關大禮包"];
+            return {
+                week: w,
+                theme: `第 ${w} 週主題任務`,
+                title: `${themes[i % themes.length]}大挑戰`,
+                prize: prizes[i % prizes.length],
+                questions: [
+                    { q: `關於第 ${w} 週的主題「${themes[i % themes.length]}」，下列何者正確？`, options: ["選項 A：快樂學習最重要", "選項 B：認真練習好習慣", "選項 C：以上皆是"], ans: 2, exp: "答對囉！養成良好習慣與快樂學習是小一勇者的超能力！" },
+                    { q: `請問進入國小一年級後，上課鐘聲響起應該怎麼做？`, options: ["還在外面跑步", "趕快回座位準備上課", "大聲聊天"], ans: 1, exp: "正確！準時進教室是守時的好寶寶！" },
+                    { q: `當老師或同學跟你說謝謝時，你應該回答什麼？`, options: ["不用客氣", "不要理他", "哭泣"], ans: 0, exp: "太棒了！非常有禮貌！" },
+                    { q: `上學途中如果遇到不認識的人給糖果，應該怎麼做？`, options: ["開心收下吃掉", "拒絕並趕快找師長協助", "跟他回家"], ans: 1, exp: "安全觀念滿分！陌生人的東西絕對不拿！" },
+                    { q: `放學回家後，第一件應該做的事情是什麼？`, options: ["先洗手並整理聯絡簿與書包", "狂打電動到半夜", "把書包丟路邊"], ans: 0, exp: "完美！好習慣讓學習更輕鬆！" }
+                ]
+            };
+        });
+
+        const STORAGE_USER = 'tainan_2027_user';
+        const STORAGE_PROGRESS = 'tainan_2027_progress';
+        const STORAGE_BRANCHES = 'tainan_2027_branches';
+
+        let currentUser = JSON.parse(localStorage.getItem(STORAGE_USER) || 'null');
+        let userProgress = JSON.parse(localStorage.getItem(STORAGE_PROGRESS) || '{"unlockedWeek": 1, "completedWeeks": [], "prizes": [], "week0Status": "unreserved"}');
+        let branchConfigs = JSON.parse(localStorage.getItem(STORAGE_BRANCHES) || JSON.stringify(BRANCHES_DATA));
+        
+        let activeModalWeek = null;
+        let activeQuizIndex = 0;
+        let scratchCanvasScratched = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initCountdown();
+            if (currentUser) {
+                showAdventureView();
+            } else {
+                showRegistrationView();
+            }
+        });
+
+        function handleRegistration(e) {
+            e.preventDefault();
+            currentUser = {
+                parentName: document.getElementById('reg-parent-name').value.trim(),
+                parentPhone: document.getElementById('reg-parent-phone').value.trim(),
+                childName: document.getElementById('reg-child-name').value.trim(),
+                school: document.getElementById('reg-school').value.trim(),
+                branch: document.getElementById('reg-branch').value,
+                createdAt: new Date().toISOString()
+            };
+            localStorage.setItem(STORAGE_USER, JSON.stringify(currentUser));
+            showAdventureView();
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+        }
+
+        function showRegistrationView() {
+            document.getElementById('registration-view').classList.remove('hidden');
+            document.getElementById('adventure-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('timer-banner').classList.add('hidden');
+            document.getElementById('user-header-status').classList.add('hidden');
+        }
+
+        function showAdventureView() {
+            document.getElementById('registration-view').classList.add('hidden');
+            document.getElementById('adventure-view').classList.remove('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('timer-banner').classList.remove('hidden');
+            document.getElementById('user-header-status').classList.remove('hidden');
+
+            document.getElementById('user-display-child').innerText = currentUser.childName;
+            document.getElementById('user-display-parent').innerText = currentUser.parentName;
+            document.getElementById('user-display-phone').innerText = currentUser.parentPhone;
+            document.getElementById('user-display-school').innerText = currentUser.school;
+            document.getElementById('user-display-branch').innerText = currentUser.branch;
+
+            document.getElementById('header-completed-count').innerText = userProgress.completedWeeks.length;
+            document.getElementById('rewards-claimed-count').innerText = userProgress.prizes.length;
+            document.getElementById('english-tickets-count').innerText = userProgress.week0Status === 'verified' ? 1 : 0;
+
+            updateWeek0CardUI();
+            renderWeeksGrid();
+        }
+
+        function updateWeek0CardUI() {
+            const badge = document.getElementById('week0-badge');
+            if (userProgress.week0Status === 'verified') {
+                badge.className = "bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold shadow";
+                badge.innerText = "已完成體驗與刮卡";
+            } else if (userProgress.week0Status === 'reserved') {
+                badge.className = "bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold shadow";
+                badge.innerText = "已預約待驗證碼";
+            } else {
+                badge.className = "bg-white text-orange-600 px-3 py-1 rounded-full text-xs font-bold shadow";
+                badge.innerText = "可預約體驗";
+            }
+        }
+
+        function initCountdown() {
+            function updateTimer() {
+                const now = new Date();
+                const dayOfWeek = now.getDay();
+                const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+                const sundayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilSunday, 23, 59, 59);
+                const diff = sundayEnd - now;
+                if (diff <= 0) {
+                    document.getElementById('weekly-countdown').innerText = "本週已到期";
+                    return;
+                }
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / 1000 / 60) % 60);
+                const s = Math.floor((diff / 1000) % 60);
+                document.getElementById('weekly-countdown').innerText = `${d}天 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+
+        function renderWeeksGrid() {
+            const grid = document.getElementById('weeks-grid');
+            grid.innerHTML = '';
+
+            WEEKS_DATA.forEach(w => {
+                const isCompleted = userProgress.completedWeeks.includes(w.week);
+                const isUnlocked = w.week <= userProgress.unlockedWeek;
+
+                let cardClass = "bg-white border-slate-200 opacity-60 cursor-not-allowed";
+                let badgeClass = "bg-slate-100 text-slate-400";
+                let statusIcon = '<i class="fa-solid fa-lock text-slate-300"></i>';
+
+                if (isCompleted) {
+                    cardClass = "bg-emerald-50/90 border-emerald-300 shadow-sm";
+                    badgeClass = "bg-emerald-200 text-emerald-800";
+                    statusIcon = '<i class="fa-solid fa-circle-check text-emerald-500 text-lg"></i>';
+                } else if (isUnlocked) {
+                    cardClass = "bg-white border-sky-300 shadow-md hover:border-amber-400 hover:scale-[1.02] transition cursor-pointer";
+                    badgeClass = "bg-amber-400 text-amber-950 font-black";
+                    statusIcon = '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">待挑戰</span>';
+                }
+
+                grid.innerHTML += `
+                    <div onclick="${isUnlocked ? `openMissionModal(${w.week})` : ''}" class="p-4 rounded-2xl border ${cardClass} space-y-2 flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${badgeClass}">第 ${w.week} 週</span>
+                            <div>${statusIcon}</div>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-sky-600 block">${w.theme}</span>
+                            <h4 class="font-bold text-sm text-slate-800 line-clamp-1">${w.title}</h4>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                            <span class="truncate max-w-[140px]"><i class="fa-solid fa-gift text-amber-500 mr-1"></i>${w.prize}</span>
+                            <span class="font-bold text-purple-600">+美語體驗</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // WEEK 0 MODAL & FLOW
+        function openWeek0Modal() {
+            const area = document.getElementById('week0-content-area');
+            const branch = currentUser.branch;
+            const info = branchConfigs[branch] || BRANCHES_DATA[branch];
+
+            if (userProgress.week0Status === 'verified') {
+                area.innerHTML = `
+                    <div class="bg-emerald-50 p-4 rounded-2xl text-emerald-900 space-y-2 text-center">
+                        <i class="fa-solid fa-circle-check text-emerald-500 text-3xl"></i>
+                        <h4 class="font-bold text-base">第 0 週體驗課已完成驗證！</h4>
+                        <p class="text-xs">您已成功於 【${branch}】 完成實體美語體驗課，並獲得專屬刮刮卡與體驗券！</p>
+                    </div>
+                `;
+            } else if (userProgress.week0Status === 'reserved') {
+                area.innerHTML = `
+                    <div class="bg-amber-50 p-4 rounded-2xl space-y-3">
+                        <h4 class="font-bold text-amber-900 text-sm">📍 已預約 【${branch}】 體驗課</h4>
+                        <div class="bg-white p-3 rounded-xl border border-amber-200 text-xs space-y-1">
+                            <p><b>地址：</b>${info.address}</p>
+                            <p><b>電話：</b>${info.phone}</p>
+                            <p><b>時段：</b>${info.time}</p>
+                        </div>
+                        <div class="space-y-1 pt-2">
+                            <label class="block font-bold text-slate-700">請輸入分校現場給予的「驗證碼」：</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="week0-code-input" placeholder="請輸入4位數字代碼" class="flex-1 p-2.5 rounded-xl border font-bold">
+                                <button onclick="verifyWeek0Code()" class="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl shadow">確認驗證</button>
+                            </div>
+                            <p class="text-[10px] text-slate-400">提示：預設分校測試驗證碼可在 12分校後台 查看或設定（預設為 ${info.code}）。</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                area.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="bg-sky-50 p-3 rounded-2xl border border-sky-100 space-y-1">
+                            <h4 class="font-bold text-sky-900">選擇您的聯繫分校預約體驗</h4>
+                            <p class="text-xs text-slate-600">目前預設聯繫分校：<b>${branch}</b>（如需更改請至報名表或下方重新選擇）</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border space-y-1 text-xs">
+                            <p><b>分校地址：</b>${info.address}</p>
+                            <p><b>諮詢電話：</b>${info.phone}</p>
+                            <p><b>體驗時段：</b>${info.time}</p>
+                            <p><b>專屬驗證代碼：</b><span class="font-mono font-bold text-rose-600">${info.code}</span></p>
+                        </div>
+                        <button onclick="submitWeek0Reservation()" class="w-full py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm shadow">
+                            確定預約此分校實體美語體驗課
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('week0-modal').classList.remove('hidden');
+        }
+
+        function closeWeek0Modal() {
+            document.getElementById('week0-modal').classList.add('hidden');
+        }
+
+        function submitWeek0Reservation() {
+            userProgress.week0Status = 'reserved';
+            localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+            alert("🎉 預約成功！請依約前往分校參加體驗課，完成後向老師索取驗證碼輸入即可刮獎！");
+            closeWeek0Modal();
+            showAdventureView();
+        }
+
+        function verifyWeek0Code() {
+            const input = document.getElementById('week0-code-input').value.trim();
+            const branch = currentUser.branch;
+            const correctCode = (branchConfigs[branch] || BRANCHES_DATA[branch]).code;
+
+            if (input === correctCode) {
+                userProgress.week0Status = 'verified';
+                localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+                closeWeek0Modal();
+                showAdventureView();
+                // Open scratch for week 0
+                activeModalWeek = { week: 0, prize: "第 0 週體驗課專屬美語文具組" };
+                openScratchRewardModal();
+            } else {
+                alert("❌ 驗證碼錯誤，請向分校老師確認正確代碼！");
+            }
+        }
+
+        // 5-QUESTION QUIZ ENGINE
+        function openMissionModal(weekNum) {
+            activeModalWeek = WEEKS_DATA.find(w => w.week === weekNum);
+            activeQuizIndex = 0;
+            renderQuizQuestion();
+            document.getElementById('mission-modal').classList.remove('hidden');
+        }
+
+        function closeMissionModal() {
+            document.getElementById('mission-modal').classList.add('hidden');
+        }
+
+        function renderQuizQuestion() {
+            const w = activeModalWeek;
+            const qObj = w.questions[activeQuizIndex];
+
+            document.getElementById('modal-week-tag').innerText = `第 ${w.week} 週 ‧ 第 ${activeQuizIndex + 1}/5 題`;
+            document.getElementById('modal-week-title').innerText = w.title;
+
+            const area = document.getElementById('modal-game-area');
+            area.innerHTML = `
+                <div class="bg-sky-50 p-3.5 rounded-2xl border border-sky-100 space-y-1">
+                    <span class="text-[10px] font-bold text-sky-700 bg-sky-200 px-2 py-0.5 rounded-full">第 ${activeQuizIndex + 1} 題 / 共 5 題</span>
+                    <p class="font-bold text-slate-800 text-sm sm:text-base leading-relaxed">${qObj.q}</p>
+                </div>
+                <div id="quiz-options" class="space-y-2.5"></div>
+                <div id="quiz-feedback" class="hidden p-3.5 rounded-2xl text-xs space-y-2">
+                    <div id="quiz-fb-title" class="font-bold text-sm"></div>
+                    <p id="quiz-fb-text" class="text-slate-600"></p>
+                    <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="w-full mt-1 py-2.5 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 transition shadow">下一題</button>
+                </div>
+            `;
+
+            const optBox = document.getElementById('quiz-options');
+            qObj.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-3 text-left rounded-xl border border-slate-200 hover:border-sky-400 hover:bg-sky-50 transition font-medium text-xs sm:text-sm text-slate-700 flex items-center justify-between";
+                btn.innerHTML = `<span>${opt}</span> <i class="fa-regular fa-circle text-slate-300"></i>`;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optBox.appendChild(btn);
+            });
+        }
+
+        function submitQuizAnswer(idx) {
+            const qObj = activeModalWeek.questions[activeQuizIndex];
+            const isCorrect = idx === qObj.ans;
+            const fb = document.getElementById('quiz-feedback');
+            const title = document.getElementById('quiz-fb-title');
+            const text = document.getElementById('quiz-fb-text');
+            const nextBtn = document.getElementById('quiz-next-btn');
+
+            fb.classList.remove('hidden', 'bg-rose-50', 'bg-emerald-50', 'text-rose-800', 'text-emerald-800');
+
+            if (isCorrect) {
+                fb.classList.add('bg-emerald-50', 'text-emerald-800');
+                title.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> 答對了！`;
+                text.innerText = qObj.exp;
+                confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } });
+                
+                if (activeQuizIndex === 4) {
+                    nextBtn.innerText = "🎉 完成 5 題！前往刮開雙重禮物";
+                    nextBtn.onclick = () => {
+                        closeMissionModal();
+                        openScratchRewardModal();
+                    };
+                } else {
+                    nextBtn.innerText = "下一題 ➜";
+                    nextBtn.onclick = () => {
+                        activeQuizIndex++;
+                        renderQuizQuestion();
+                    };
+                }
+            } else {
+                fb.classList.add('bg-rose-50', 'text-rose-800');
+                title.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-500"></i>再試一次！`;
+                text.innerText = "沒關係，請重新選擇正確答案喔！";
+                nextBtn.classList.add('hidden');
+            }
+        }
+
+        function nextQuizQuestion() {
+            activeQuizIndex++;
+            renderQuizQuestion();
+        }
+
+        // SCRATCH CARD ENGINE
+        function openScratchRewardModal() {
+            document.getElementById('scratch-prize-name').innerText = activeModalWeek.prize;
+            const claimBtn = document.getElementById('claim-reward-btn');
+            claimBtn.disabled = true;
+            claimBtn.className = "flex-2 py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs transition";
+            claimBtn.innerText = "請先刮開刮刮卡";
+
+            initScratchCanvas();
+            document.getElementById('reward-modal').classList.remove('hidden');
+        }
+
+        function initScratchCanvas() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth || 256;
+            canvas.height = canvas.offsetHeight || 128;
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Noto Sans TC';
+            ctx.textAlign = 'center';
+            ctx.fillText('用手指或滑鼠刮開這裡', canvas.width / 2, canvas.height / 2 + 5);
+
+            scratchCanvasScratched = false;
+            let isDrawing = false;
+
+            function scratch(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, 16, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (!scratchCanvasScratched) {
+                    scratchCanvasScratched = true;
+                    enableClaimBtn();
+                }
+            }
+
+            canvas.onmousedown = (e) => { isDrawing = true; scratch(e); };
+            canvas.onmousemove = scratch;
+            canvas.onmouseup = () => isDrawing = false;
+            canvas.ontouchstart = (e) => { isDrawing = true; scratch(e); };
+            canvas.ontouchmove = scratch;
+            canvas.ontouchend = () => isDrawing = false;
+        }
+
+        function autoScratch() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            enableClaimBtn();
+        }
+
+        function enableClaimBtn() {
+            const btn = document.getElementById('claim-reward-btn');
+            btn.disabled = false;
+            btn.className = "flex-2 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-xs shadow hover:brightness-105 transition pulse-btn cursor-pointer";
+            btn.innerText = "🎉 刮開成功！點此登記領獎";
+        }
+
+        function openWinnerModal() {
+            document.getElementById('reward-modal').classList.add('hidden');
+            document.getElementById('win-child-name').value = currentUser.childName;
+            document.getElementById('win-parent-phone').value = currentUser.parentPhone;
+            document.getElementById('win-branch-select').value = currentUser.branch;
+            document.getElementById('winner-modal').classList.remove('hidden');
+        }
+
+        function confirmWinnerClaim(e) {
+            e.preventDefault();
+            const w = activeModalWeek.week;
+
+            if (w !== 0 && !userProgress.completedWeeks.includes(w)) {
+                userProgress.completedWeeks.push(w);
+                userProgress.prizes.push({ week: w, name: activeModalWeek.prize });
+                if (userProgress.unlockedWeek <= w && userProgress.unlockedWeek < 21) {
+                    userProgress.unlockedWeek = w + 1;
+                }
+                localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+            }
+
+            document.getElementById('winner-modal').classList.add('hidden');
+            showAdventureView();
+            confetti({ particleCount: 100, spread: 90, origin: { y: 0.5 } });
+            alert(`🎉 登記成功！獎品與體驗券已記錄，分校將於 3 天內與您聯繫！`);
+        }
+
+        function claimGrandPrize() {
+            if (userProgress.week0Status !== 'verified' || userProgress.completedWeeks.length < 21) {
+                alert("⚠️ 須完成「第 0 週實體體驗課驗證」以及「全 21 週主題任務」才可以解鎖終極大獎抽獎資格喔！");
+                return;
+            }
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+            alert("🏆 恭喜您符合終極大獎抽獎資格！您的完訓資料已成功送交台南總管理處！");
+        }
+
+        // ADMIN LOGIN & PANEL
+        function openAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.remove('hidden');
+        }
+        function closeAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.add('hidden');
+        }
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('admin-user-input').value.trim();
+            const p = document.getElementById('admin-pass-input').value.trim();
+            if (u === 'admin' && p === '2027') {
+                closeAdminLoginModal();
+                showAdminView();
+            } else {
+                alert("❌ 帳號或密碼錯誤 (預設帳號: admin / 密碼: 2027)");
+            }
+        }
+
+        function showAdminView() {
+            document.getElementById('registration-view').classList.add('hidden');
+            document.getElementById('adventure-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.remove('hidden');
+            renderAdminBranchConfigs();
+            renderAdminTable();
+        }
+
+        function toggleAdminView() {
+            if (currentUser) showAdventureView();
+            else showRegistrationView();
+        }
+
+        function renderAdminBranchConfigs() {
+            const container = document.getElementById('branch-config-list');
+            container.innerHTML = '';
+
+            Object.keys(branchConfigs).forEach(bName => {
+                const b = branchConfigs[bName];
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                        <div class="font-bold text-slate-800 flex justify-between">
+                            <span>${bName}</span>
+                            <span class="text-rose-600 font-mono">驗證碼: <input type="text" id="code-${bName}" value="${b.code}" class="w-14 border px-1 rounded text-center font-bold"></span>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400">體驗時間地點：</label>
+                            <input type="text" id="time-${bName}" value="${b.time}" class="w-full border p-1 rounded font-medium">
+                        </div>
+                        <button onclick="saveBranchConfig('${bName}')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl">儲存變更</button>
+                    </div>
+                `;
+            });
+        }
+
+        function saveBranchConfig(bName) {
+            const newCode = document.getElementById(`code-${bName}`).value.trim();
+            const newTime = document.getElementById(`time-${bName}`).value.trim();
+            if (branchConfigs[bName]) {
+                branchConfigs[bName].code = newCode;
+                branchConfigs[bName].time = newTime;
+                localStorage.setItem(STORAGE_BRANCHES, JSON.stringify(branchConfigs));
+                alert(`✅ ${bName} 設定已更新儲存！`);
+            }
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('admin-table-body');
+            const search = document.getElementById('admin-search').value.trim().toLowerCase();
+            const branchFilter = document.getElementById('admin-branch-filter').value;
+            tbody.innerHTML = '';
+
+            let dataset = [];
+            if (currentUser) {
+                dataset.push({
+                    child: currentUser.childName,
+                    parent: currentUser.parentName,
+                    phone: currentUser.parentPhone,
+                    school: currentUser.school,
+                    branch: currentUser.branch,
+                    week0: userProgress.week0Status === 'verified' ? '已驗證' : (userProgress.week0Status === 'reserved' ? '已預約' : '未預約'),
+                    progress: `${userProgress.completedWeeks.length}/21 週`,
+                    latestPrize: userProgress.prizes.length > 0 ? userProgress.prizes[userProgress.prizes.length - 1].name : '無'
+                });
+            }
+
+            dataset.push(
+                { child: "張阿明", parent: "張媽媽", phone: "0988-123-456", school: "勝利國小", branch: "東區東門校", week0: "已驗證", progress: "3/21 週", latestPrize: "樂高積木小包" },
+                { child: "李小花", parent: "李爸爸", phone: "0911-222-333", school: "億載國小", branch: "安平區安平校", week0: "已預約", progress: "5/21 週", latestPrize: "智慧存錢筒" }
+            );
+
+            dataset.forEach(item => {
+                if (branchFilter !== 'ALL' && item.branch !== branchFilter) return;
+                if (search && !item.parent.toLowerCase().includes(search) && !item.phone.includes(search)) return;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 font-medium">
+                        <td class="p-3"><span class="font-bold text-slate-800">${item.child}</span><br><span class="text-[10px] text-slate-400">家長:${item.parent}</span></td>
+                        <td class="p-3 font-mono">${item.phone}</td>
+                        <td class="p-3">${item.school}<br><span class="text-[10px] text-sky-600 font-bold">${item.branch}</span></td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px]">${item.week0}</span></td>
+                        <td class="p-3"><span class="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-900 font-bold text-[10px]">${item.progress}</span></td>
+                        <td class="p-3 text-slate-700">${item.latestPrize}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function adminUnlockNextWeek() {
+            if (userProgress.unlockedWeek < 21) {
+                userProgress.unlockedWeek += 1;
+                localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+                alert(`⚡ 模擬快進：已解鎖至第 ${userProgress.unlockedWeek} 週！`);
+                showAdventureView();
+            } else {
+                alert('已全部解鎖！');
+            }
+        }
+
+        function adminUnlockAllWeeks() {
+            userProgress.unlockedWeek = 21;
+            userProgress.completedWeeks = Array.from({length: 21}, (_, i) => i + 1);
+            userProgress.week0Status = 'verified';
+            localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+            alert('🚀 模擬快進：第0週體驗課與全 21 週已全數解鎖通關！');
+            showAdventureView();
+        }
+
+        function adminResetData() {
+            if (confirm('確定要清除所有測試資料嗎？')) {
+                localStorage.removeItem(STORAGE_USER);
+                localStorage.removeItem(STORAGE_PROGRESS);
+                location.reload();
+            }
+        }
+
+        function exportToCSV() {
+            let csv = "\uFEFF學生姓名,家長姓名,電話,目標國小,台南分校,第0週體驗狀態,完成週次進度\n";
+            csv += `"${currentUser?currentUser.childName:'無'}","${currentUser?currentUser.parentName:'無'}","${currentUser?currentUser.parentPhone:'無'}","${currentUser?currentUser.school:'無'}","${currentUser?currentUser.branch:'無'}","${userProgress.week0Status}","${userProgress.completedWeeks.length}/21週"\n`;
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `台南小一新手村_名單_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
