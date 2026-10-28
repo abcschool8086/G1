@@ -508,18 +508,6 @@
                     <!-- Option Buttons Injected Dynamically -->
                 </div>
 
-        <!-- SECTION: SIMULATED ADMIN BACKEND UPDATES -->
-                <!-- Branch Passcode & Time Settings in Admin -->
-                <div class="pt-2 border-t border-sky-200 space-y-2">
-                    <p class="font-bold text-sky-900 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-key text-amber-500"></i> 台南 12 分校體驗驗證碼與時段管理</span>
-                        <span class="text-[10px] text-sky-600">可於此修改各分校驗證碼與體驗課資訊</span>
-                    </p>
-                    <div id="admin-passcode-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 bg-white rounded-xl border border-sky-100">
-                        <!-- Dynamic Branch Code & Schedule Settings Inputs -->
-                    </div>
-                </div>
-
                 <div id="quiz-feedback" class="hidden p-3.5 rounded-2xl text-xs space-y-2">
                     <div id="quiz-feedback-title" class="font-bold text-sm flex items-center gap-1.5"></div>
                     <p id="quiz-feedback-text" class="text-slate-600 leading-relaxed"></p>
@@ -528,6 +516,40 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 2: LUCKY SCRATCH CARD MODAL           -->
+    <!-- ========================================== -->
+    <div id="scratch-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center relative animate-pop overflow-hidden">
+            <button onclick="closeScratchModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="space-y-1 pt-2">
+                <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-extrabold text-xs">🎉 通關成功刮刮卡</span>
+                <h3 class="font-game text-xl font-black text-slate-900">塗抹刮開塗層抽獎</h3>
+                <p class="text-xs text-slate-500">用滑鼠或手指刮開灰色塗層揭曉當週禮物！</p>
+            </div>
+
+            <!-- Canvas Scratch Box -->
+            <div class="relative w-64 h-36 mx-auto rounded-2xl overflow-hidden shadow-inner border-2 border-amber-300">
+                <!-- Underneath Reward Layer -->
+                <div id="scratch-result-box" class="absolute inset-0 bg-diamond-pattern flex flex-col items-center justify-center p-3 text-white">
+                    <div id="scratch-result-icon" class="text-3xl mb-1">🎁</div>
+                    <div id="scratch-result-title" class="font-game font-black text-lg lucky-text-stroke">中獎囉！</div>
+                    <div id="scratch-result-desc" class="text-[11px] font-bold text-amber-100">獲得精美小一鉛筆盒套組</div>
+                </div>
+
+                <!-- Top Scratch Canvas Layer -->
+                <canvas id="scratch-canvas" width="256" height="144" class="scratch-canvas absolute inset-0 z-10"></canvas>
+            </div>
+
+            <button id="scratch-finish-btn" onclick="finishScratchCard()" disabled class="w-full py-3 rounded-2xl bg-slate-200 text-slate-400 font-black text-xs transition">
+                請先刮開塗層 ➔
+            </button>
         </div>
     </div>
 
@@ -964,114 +986,424 @@
             alert("✅ 後台設定、12 分校專屬驗證碼與體驗課時段已成功更新！");
         }
 
-        function saveAdminSettings() {
-            adminSettings.prizeName = document.getElementById('admin-prize-input').value.trim() || "精美小一鉛筆盒套組";
-            adminSettings.probability = parseInt(document.getElementById('admin-prob-select').value);
-
-            if (!adminSettings.passcodes) adminSettings.passcodes = {};
-
-            const branches = Object.keys(BRANCH_DATA);
-            branches.forEach(b => {
-                const inp = document.getElementById(`admin-pass-${b}`);
-                if (inp) adminSettings.passcodes[b] = inp.value.trim() || "2027";
-            });
-
-            localStorage.setItem(STORAGE_ADMIN, JSON.stringify(adminSettings));
-            alert("✅ 後台設定與 12 分校驗證碼已更新成功！");
+        // =========================================================
+        // WEEK 0 MODAL & RESERVATION LOGIC
+        // =========================================================
+        function openWeek0Modal() {
+            const branchSelect = document.getElementById('w0-branch-select');
+            if (currentUser && currentUser.branch) {
+                branchSelect.value = currentUser.branch;
+            }
+            updateWeek0BranchDisplay();
+            document.getElementById('week0-modal').classList.remove('hidden');
         }
 
-        function renderAdminTable() {
-            const tbody = document.getElementById('admin-table-body');
-            const search = document.getElementById('admin-search').value.trim().toLowerCase();
-            const branchFilter = document.getElementById('admin-branch-filter').value;
+        function closeWeek0Modal() {
+            document.getElementById('week0-modal').classList.add('hidden');
+        }
 
-            tbody.innerHTML = '';
+        function updateWeek0BranchDisplay() {
+            const branchName = document.getElementById('w0-branch-select').value;
+            const data = BRANCH_DATA[branchName] || BRANCH_DATA["凱仕蘭分校"];
 
-            let list = [];
-            if (currentUser) {
-                let w0Status = "未預約";
-                if (userProgress.completedWeek0) w0Status = "已體驗完成刮卡";
-                else if (userProgress.week0Booking) w0Status = `已預約(${userProgress.week0Booking.slot})`;
+            document.getElementById('w0-selected-branch-title').innerText = branchName;
+            document.getElementById('w0-branch-address').innerText = data.address;
+            document.getElementById('w0-branch-time').innerText = data.time;
+            document.getElementById('w0-branch-phone').innerText = data.phone;
 
-                list.push({
-                    child: currentUser.childName,
-                    parent: currentUser.parentName,
-                    phone: currentUser.parentPhone,
-                    school: currentUser.school,
-                    branch: currentUser.branch,
-                    week0: w0Status,
-                    progress: `${userProgress.completedWeeks.length} / 21 週`,
-                    wins: userProgress.wins.map(w => `第${w.week}週:${w.prize}`).join(', ') || '無中獎'
+            const slotSelect = document.getElementById('w0-booking-slot');
+            slotSelect.innerHTML = '';
+            data.slots.forEach(slot => {
+                slotSelect.innerHTML += `<option value="${slot}">${slot}</option>`;
+            });
+
+            const passBox = document.getElementById('w0-verification-box');
+            const passErr = document.getElementById('w0-verify-error');
+            if (passErr) passErr.classList.add('hidden');
+
+            if (userProgress.completedWeek0) {
+                document.getElementById('w0-booking-status-badge').innerText = "已驗證完成";
+                document.getElementById('w0-booking-status-badge').className = "bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full";
+            } else if (userProgress.week0Booking) {
+                document.getElementById('w0-booking-status-badge').innerText = "已預約";
+                document.getElementById('w0-booking-status-badge').className = "bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full";
+            }
+        }
+
+        function submitWeek0Booking() {
+            const branchName = document.getElementById('w0-branch-select').value;
+            const slot = document.getElementById('w0-booking-slot').value;
+            const note = document.getElementById('w0-booking-note').value.trim();
+
+            userProgress.week0Booking = {
+                branch: branchName,
+                slot: slot,
+                note: note,
+                time: new Date().toLocaleString()
+            };
+            localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+            alert(`✅ 預約成功！已登記預約「${branchName}」時段：${slot}。體驗完成後，請讓現場老師輸入驗證碼通關刮卡！`);
+            showAdventureView();
+            updateWeek0BranchDisplay();
+        }
+
+        function verifyWeek0Code() {
+            const branchName = document.getElementById('w0-branch-select').value;
+            const inputCode = document.getElementById('w0-passcode-input').value.trim();
+            const correctCode = (adminSettings.passcodes && adminSettings.passcodes[branchName]) || "2027";
+
+            if (inputCode === correctCode) {
+                document.getElementById('w0-verify-error').classList.add('hidden');
+                userProgress.completedWeek0 = true;
+                localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+                closeWeek0Modal();
+                showAdventureView();
+
+                openScratchCard(0);
+            } else {
+                document.getElementById('w0-verify-error').classList.remove('hidden');
+            }
+        }
+
+        // =========================================================
+        // QUIZ GAME ENGINE & MATCHING GAME
+        // =========================================================
+        function startQuiz(weekNum) {
+            currentQuizWeek = weekNum;
+            currentQuestionIdx = 0;
+
+            const weekInfo = WEEKS_DATA.find(w => w.week === weekNum);
+            if (!weekInfo) return;
+
+            document.getElementById('quiz-modal-week-tag').innerText = `第 ${weekNum} 週`;
+            document.getElementById('quiz-modal-title').innerText = weekInfo.title;
+
+            renderQuizQuestion();
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quiz-modal').classList.hidden = true;
+            document.getElementById('quiz-modal').classList.add('hidden');
+        }
+
+        function renderQuizQuestion() {
+            const weekInfo = WEEKS_DATA.find(w => w.week === currentQuizWeek);
+            const qData = weekInfo.questions[currentQuestionIdx];
+
+            document.getElementById('quiz-progress-text').innerText = `第 ${currentQuestionIdx + 1} / 5 題`;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentQuestionIdx + 1) / 5) * 100}%`;
+
+            document.getElementById('quiz-question-text').innerText = qData.q;
+            document.getElementById('quiz-feedback').classList.add('hidden');
+
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            if (qData.type === 'matching') {
+                matchingSelectedLeft = null;
+                matchingSelectedRight = null;
+                matchingUserConnections = [];
+
+                let leftHtml = '<div class="space-y-2 flex-1">';
+                let rightHtml = '<div class="space-y-2 flex-1">';
+
+                qData.pairs.forEach((pair, idx) => {
+                    leftHtml += `
+                        <button id="match-left-${idx}" onclick="selectMatchingLeft(${idx})" class="matching-item w-full p-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 text-left bg-white shadow-sm flex items-center justify-between">
+                            <span>${pair.left}</span>
+                            <i class="fa-regular fa-circle text-slate-300"></i>
+                        </button>
+                    `;
+                    rightHtml += `
+                        <button id="match-right-${idx}" onclick="selectMatchingRight(${idx})" class="matching-item w-full p-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 text-left bg-white shadow-sm flex items-center justify-between">
+                            <span>${pair.right}</span>
+                            <i class="fa-regular fa-circle text-slate-300"></i>
+                        </button>
+                    `;
+                });
+
+                leftHtml += '</div>';
+                rightHtml += '</div>';
+
+                container.innerHTML = `
+                    <p class="text-[11px] font-bold text-sky-700 bg-sky-50 p-2 rounded-lg">👉 請分別點擊左側與右側對應項目進行連線配對：</p>
+                    <div class="flex gap-3 pt-1">
+                        ${leftHtml}
+                        ${rightHtml}
+                    </div>
+                `;
+            } else {
+                qData.options.forEach((opt, idx) => {
+                    container.innerHTML += `
+                        <button onclick="checkAnswer(${idx})" class="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-sky-400 hover:bg-sky-50 text-left text-xs font-bold text-slate-800 transition flex items-center justify-between group">
+                            <span>${opt}</span>
+                            <i class="fa-regular fa-circle text-slate-300 group-hover:text-sky-500"></i>
+                        </button>
+                    `;
                 });
             }
+        }
 
-            const mockData = [
-                { child: "張小明", parent: "張媽媽", phone: "0912-345-678", school: "勝利國小", branch: "崇學分校", week0: "已預約(每週六 10:00-11:00)", progress: "4 / 21 週", wins: "無中獎" },
-                { child: "李小華", parent: "李爸爸", phone: "0922-111-333", school: "億載國小", branch: "安平區艾蒙利校", week0: "已體驗完成刮卡", progress: "12 / 21 週", wins: "第2週:鉛筆盒套組" },
-                { child: "陳大熊", parent: "陳媽媽", phone: "0955-666-888", school: "崇明國小", branch: "凱仕蘭分校", week0: "未預約", progress: "1 / 21 週", wins: "無中獎" }
-            ];
+        function selectMatchingLeft(idx) {
+            matchingSelectedLeft = idx;
+            const weekInfo = WEEKS_DATA.find(w => w.week === currentQuizWeek);
+            const qData = weekInfo.questions[currentQuestionIdx];
 
-            list = list.concat(mockData);
-
-            list.forEach(item => {
-                if (branchFilter !== 'ALL' && item.branch !== branchFilter) return;
-                if (search && !item.parent.toLowerCase().includes(search) && !item.phone.includes(search)) return;
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 border-b border-slate-100 font-medium";
-                tr.innerHTML = `
-                    <td class="p-3"><span class="font-bold text-slate-800">${item.child}</span><br><span class="text-[10px] text-slate-400">家長:${item.parent}</span></td>
-                    <td class="p-3 font-mono">${item.phone}</td>
-                    <td class="p-3">${item.school}<br><span class="text-[10px] text-sky-600 font-bold">${item.branch}</span></td>
-                    <td class="p-3 font-bold ${item.week0.includes('已')?'text-emerald-600':'text-slate-400'}">${item.week0}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px]">${item.progress}</span></td>
-                    <td class="p-3 text-slate-700">${item.wins}</td>
-                `;
-                tbody.appendChild(tr);
+            qData.pairs.forEach((_, i) => {
+                const el = document.getElementById(`match-left-${i}`);
+                if (el && !el.classList.contains('matched')) {
+                    el.className = `matching-item w-full p-2.5 rounded-xl border-2 text-xs font-bold text-slate-800 text-left bg-white shadow-sm flex items-center justify-between ${i === idx ? 'border-amber-400 bg-amber-50' : 'border-slate-200'}`;
+                }
             });
+
+            checkMatchingPair();
         }
 
-        function adminUnlockNextWeek() {
-            if (userProgress.unlockedWeek < 21) {
-                userProgress.unlockedWeek += 1;
-                localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
-                alert(`⚡ 快進成功：已解鎖至第 ${userProgress.unlockedWeek} 週！`);
-                showAdventureView();
-                renderAdminTable();
+        function selectMatchingRight(idx) {
+            matchingSelectedRight = idx;
+            const weekInfo = WEEKS_DATA.find(w => w.week === currentQuizWeek);
+            const qData = weekInfo.questions[currentQuestionIdx];
+
+            qData.pairs.forEach((_, i) => {
+                const el = document.getElementById(`match-right-${i}`);
+                if (el && !el.classList.contains('matched')) {
+                    el.className = `matching-item w-full p-2.5 rounded-xl border-2 text-xs font-bold text-slate-800 text-left bg-white shadow-sm flex items-center justify-between ${i === idx ? 'border-amber-400 bg-amber-50' : 'border-slate-200'}`;
+                }
+            });
+
+            checkMatchingPair();
+        }
+
+        function checkMatchingPair() {
+            if (matchingSelectedLeft !== null && matchingSelectedRight !== null) {
+                const leftEl = document.getElementById(`match-left-${matchingSelectedLeft}`);
+                const rightEl = document.getElementById(`match-right-${matchingSelectedRight}`);
+
+                if (matchingSelectedLeft === matchingSelectedRight) {
+                    leftEl.className = "matching-item matched w-full p-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-xs font-bold text-emerald-900 text-left flex items-center justify-between";
+                    rightEl.className = "matching-item matched w-full p-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-xs font-bold text-emerald-900 text-left flex items-center justify-between";
+                    leftEl.querySelector('i').className = "fa-solid fa-circle-check text-emerald-600";
+                    rightEl.querySelector('i').className = "fa-solid fa-circle-check text-emerald-600";
+
+                    matchingUserConnections.push(matchingSelectedLeft);
+                    matchingSelectedLeft = null;
+                    matchingSelectedRight = null;
+
+                    const weekInfo = WEEKS_DATA.find(w => w.week === currentQuizWeek);
+                    const qData = weekInfo.questions[currentQuestionIdx];
+
+                    if (matchingUserConnections.length === qData.pairs.length) {
+                        showFeedback(true, qData.detail);
+                    }
+                } else {
+                    leftEl.className = "matching-item w-full p-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-xs font-bold text-rose-900 text-left flex items-center justify-between";
+                    rightEl.className = "matching-item w-full p-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-xs font-bold text-rose-900 text-left flex items-center justify-between";
+
+                    setTimeout(() => {
+                        if (!leftEl.classList.contains('matched')) leftEl.className = "matching-item w-full p-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 text-left bg-white shadow-sm flex items-center justify-between";
+                        if (!rightEl.classList.contains('matched')) rightEl.className = "matching-item w-full p-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 text-left bg-white shadow-sm flex items-center justify-between";
+                        matchingSelectedLeft = null;
+                        matchingSelectedRight = null;
+                    }, 600);
+                }
+            }
+        }
+
+        function checkAnswer(selectedIdx) {
+            const weekInfo = WEEKS_DATA.find(w => w.week === currentQuizWeek);
+            const qData = weekInfo.questions[currentQuestionIdx];
+
+            const isCorrect = selectedIdx === qData.ans;
+            showFeedback(isCorrect, qData.detail);
+        }
+
+        function showFeedback(isCorrect, detailText) {
+            const fbBox = document.getElementById('quiz-feedback');
+            const fbTitle = document.getElementById('quiz-feedback-title');
+            const fbText = document.getElementById('quiz-feedback-text');
+
+            fbBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                fbBox.className = "p-3.5 rounded-2xl text-xs space-y-1 bg-emerald-50 border border-emerald-200 text-emerald-900 animate-pop";
+                fbTitle.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> 太棒了！答對囉！`;
             } else {
-                alert("已全部解鎖！");
+                fbBox.className = "p-3.5 rounded-2xl text-xs space-y-1 bg-amber-50 border border-amber-200 text-amber-900 animate-pop";
+                fbTitle.innerHTML = `<i class="fa-solid fa-lightbulb text-amber-600"></i> 再試試看！小提示：`;
+            }
+
+            fbText.innerText = detailText;
+        }
+
+        function nextQuizQuestion() {
+            if (currentQuestionIdx < 4) {
+                currentQuestionIdx++;
+                renderQuizQuestion();
+            } else {
+                closeQuizModal();
+                if (!userProgress.completedWeeks.includes(currentQuizWeek)) {
+                    userProgress.completedWeeks.push(currentQuizWeek);
+                    if (currentQuizWeek === userProgress.unlockedWeek && userProgress.unlockedWeek < 21) {
+                        userProgress.unlockedWeek++;
+                    }
+                    localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+                }
+
+                showAdventureView();
+                openScratchCard(currentQuizWeek);
             }
         }
 
-        function adminUnlockAllWeeks() {
-            userProgress.completedWeek0 = true;
-            userProgress.unlockedWeek = 21;
-            userProgress.completedWeeks = Array.from({length: 21}, (_, i) => i + 1);
-            localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
-            alert("🚀 快進成功：全 21 週及美語體驗課已全部完成標記！");
+        // =========================================================
+        // SCRATCH CARD CANVAS ENGINE
+        // =========================================================
+        function openScratchCard(weekNum) {
+            pendingScratchWeek = weekNum;
+            isScratchCanvasCleared = false;
+
+            const prob = adminSettings.probability || 80;
+            const rand = Math.floor(Math.random() * prob);
+            scratchResultIsWin = (rand === 0);
+
+            const titleEl = document.getElementById('scratch-result-title');
+            const descEl = document.getElementById('scratch-result-desc');
+            const iconEl = document.getElementById('scratch-result-icon');
+
+            if (scratchResultIsWin) {
+                titleEl.innerText = "🎉 恭喜中獎！";
+                descEl.innerText = `獲得【${adminSettings.prizeName || '精美小一鉛筆盒套組'}】！`;
+                iconEl.innerText = "🎁";
+            } else {
+                titleEl.innerText = "加油！差一點點！";
+                descEl.innerText = "銘謝惠顧，持續挑戰下一週！";
+                iconEl.innerText = "🌟";
+            }
+
+            const btn = document.getElementById('scratch-finish-btn');
+            btn.disabled = true;
+            btn.className = "w-full py-3 rounded-2xl bg-slate-200 text-slate-400 font-black text-xs transition";
+            btn.innerText = "請先刮開塗層 ➔";
+
+            initScratchCanvas();
+            document.getElementById('scratch-modal').classList.remove('hidden');
+        }
+
+        function closeScratchModal() {
+            document.getElementById('scratch-modal').classList.add('hidden');
+        }
+
+        function initScratchCanvas() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = 'bold 14px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('刮開塗層揭曉獎品', width / 2, height / 2 + 5);
+
+            let isDrawing = false;
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (width / rect.width),
+                    y: (clientY - rect.top) * (height / rect.height)
+                };
+            }
+
+            function scratch(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 16, 0, Math.PI * 2);
+                ctx.fill();
+
+                checkScratchPercentage();
+            }
+
+            canvas.onmousedown = (e) => { isDrawing = true; scratch(e); };
+            canvas.onmousemove = scratch;
+            canvas.onmouseup = () => { isDrawing = false; };
+
+            canvas.ontouchstart = (e) => { isDrawing = true; scratch(e); };
+            canvas.ontouchmove = scratch;
+            canvas.ontouchend = () => { isDrawing = false; };
+        }
+
+        function checkScratchPercentage() {
+            if (isScratchCanvasCleared) return;
+
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let clearedPixels = 0;
+
+            for (let i = 3; i < imgData.data.length; i += 4) {
+                if (imgData.data[i] === 0) clearedPixels++;
+            }
+
+            const percentage = (clearedPixels / (canvas.width * canvas.height)) * 100;
+            if (percentage > 40) {
+                isScratchCanvasCleared = true;
+                const btn = document.getElementById('scratch-finish-btn');
+                btn.disabled = false;
+                btn.className = "w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white font-black text-xs shadow-lg transition pulse-btn";
+                btn.innerText = "完成刮卡 ➔ 領取關卡獎勵";
+
+                if (scratchResultIsWin && window.confetti) {
+                    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+                }
+            }
+        }
+
+        function finishScratchCard() {
+            if (scratchResultIsWin) {
+                const prize = adminSettings.prizeName || '精美小一鉛筆盒套組';
+                userProgress.wins.push({ week: pendingScratchWeek, prize: prize, date: new Date().toLocaleDateString() });
+                localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(userProgress));
+                alert(`🎉 恭喜中獎！已幫您紀錄【${prize}】，請憑此手機畫面至選定分校領取！`);
+            }
+            closeScratchModal();
             showAdventureView();
-            renderAdminTable();
         }
 
-        function adminResetData() {
-            if (confirm("確定要重置所有測試資料嗎？")) {
-                localStorage.removeItem(STORAGE_USER);
-                localStorage.removeItem(STORAGE_PROGRESS);
-                localStorage.removeItem(STORAGE_ADMIN);
-                location.reload();
+        // =========================================================
+        // GRAND PRIZE ELIGIBILITY CHECK
+        // =========================================================
+        function checkGrandPrizeEligibility() {
+            const grandBtn = document.getElementById('grand-prize-btn');
+            const isAllWeeks = userProgress.completedWeeks.length >= 21;
+            const isWeek0Done = userProgress.completedWeek0;
+
+            if (isAllWeeks && isWeek0Done) {
+                grandBtn.disabled = false;
+                grandBtn.className = "w-full max-w-sm mx-auto py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white font-black text-base shadow-xl pulse-btn hover:brightness-105 transition cursor-pointer";
+                grandBtn.innerText = "🏆 立即參加 21 週全通關終極大抽獎 ➔";
+            } else {
+                grandBtn.disabled = true;
+                grandBtn.className = "w-full max-w-sm mx-auto py-3 rounded-2xl bg-slate-700 text-slate-400 font-bold text-sm cursor-not-allowed";
+                grandBtn.innerText = `未完成 (需體驗課 + 21週，進度: ${userProgress.completedWeeks.length}/21)`;
             }
         }
 
-        function exportToCSV() {
-            let csv = "\uFEFF學生姓名,家長姓名,電話,目標國小,分校,美語體驗課,21週進度,刮刮卡中獎記錄\n";
-            csv += `"${currentUser?currentUser.childName:'無'}","${currentUser?currentUser.parentName:'無'}","${currentUser?currentUser.parentPhone:'無'}","${currentUser?currentUser.school:'無'}","${currentUser?currentUser.branch:'無'}","${userProgress.completedWeek0?'已完成':'未完成'}","${userProgress.completedWeeks.length}/21週","${userProgress.wins.length>0?userProgress.wins.map(w=>w.prize).join(';'):'無'}"\n`;
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `台南小一新手村_名單匯出_${new Date().toLocaleDateString()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function claimGrandPrize() {
+            if (window.confetti) {
+                confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+            }
+            alert("🎉 恭喜您完成了「21週勇者大冒險」與「實體免費美語體驗」！您已成功獲得終極大獎抽獎資格！分校老師將會主動聯繫您安排抽獎！");
         }
     </script>
+</body>
+</html>
